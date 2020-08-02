@@ -6,3 +6,4 @@
 /app/settings.php
 !/logs/README.md
 .phpunit.result.cache
+.htaccess
