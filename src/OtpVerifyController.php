@@ -13,7 +13,7 @@ use Exception;
 
 final class OtpVerifyController
 {
-    
+
 
     public function __construct(
         PDO $pdo,
@@ -63,7 +63,11 @@ final class OtpVerifyController
 
         // new user
         if ($id == -1) {
+            // create user, returns -1 if error
             $id = $this->userOps->createNewUser($ph_no);
+            if ($id == -1) {
+                return $this->errorReturn($request, $response, "Error Creating User");
+            }
             // createAuthToken
             $auth = $this->tokenOps->createAuthToken($id);
             // createRefToken
