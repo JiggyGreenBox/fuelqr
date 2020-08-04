@@ -59,4 +59,37 @@ final class UserOps
         }
         return $id;
     }
+
+
+    public function updateFirebaseTokenIfNew($id, $fb_token){
+        $stmt = $this->pdo->prepare('SELECT firebase_token FROM users WHERE user_id= :user_id');
+        $stmt->execute([
+            'user_id'     => $id
+        ]);
+        $row = $stmt->fetch();
+
+        // check if result
+        if ($row) {
+            // check if null
+            if(!is_null($row['firebase_token'])){
+                $stored_token = $row['firebase_token'];
+
+                if($stored_token != $fb_token){
+                    $this->updateFirebaseToken($id, $fb_token);
+                }
+            }
+            // no token, update it
+            else{
+                $this->updateFirebaseToken($id, $fb_token);
+            }          
+        }
+    }
+
+    private function updateFirebaseToken($id, $fb_token){
+        $stmt = $this->pdo->prepare('UPDATE users SET firebase_token = :fb_token WHERE user_id = :user_id');
+        $stmt->execute([
+            'user_id'     => $id,
+            'fb_token'     => $fb_token
+        ]);
+    }
 }

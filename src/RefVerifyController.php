@@ -36,12 +36,13 @@ final class RefVerifyController
         $postData = (array)$request->getParsedBody();
 
         // check post vars
-        if (!array_key_exists("ref", $postData)) {
+        if (!array_key_exists("ref", $postData) || !array_key_exists("fb_token", $postData)) {
             return $this->errorReturn($request, $response, "Access Denied");
         }
 
         // assign vars
         $ref_token  = $request->getParsedBody()['ref'];
+        $fb_token  = $request->getParsedBody()['fb_token'];
 
         // decode ref token
         $id = $this->tokenOps->decodeRefToken($ref_token);
@@ -51,6 +52,8 @@ final class RefVerifyController
             return $this->errorReturn($request, $response, "Access Denied");
         } else {
             $auth = $this->tokenOps->createAuthToken($id);
+
+            $this->userOps->updateFirebaseTokenIfNew($id, $fb_token);
         }
 
 

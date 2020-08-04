@@ -39,13 +39,14 @@ final class OtpVerifyController
         $postData = (array)$request->getParsedBody();
 
         // check post vars
-        if (!array_key_exists("ph_no", $postData) || !array_key_exists("otp", $postData)) {
+        if (!array_key_exists("ph_no", $postData) || !array_key_exists("otp", $postData)|| !array_key_exists("fb_token", $postData)) {
             return $this->errorReturn($request, $response, "Access Denied");
         }
 
         // assign vars
         $ph_no  = $request->getParsedBody()['ph_no'];
         $otp    = $request->getParsedBody()['otp'];
+        $fb_token  = $request->getParsedBody()['fb_token'];
 
         // TODO        
         // sanitize phone number
@@ -72,6 +73,9 @@ final class OtpVerifyController
             $auth = $this->tokenOps->createAuthToken($id);
             // createRefToken
             $ref = $this->tokenOps->createRefToken($id);
+            // update firebase id
+            $this->userOps->updateFirebaseTokenIfNew($id, $fb_token);
+
             // make empty cars
             // make empty pending
         } else {
@@ -79,6 +83,8 @@ final class OtpVerifyController
             $auth = $this->tokenOps->createAuthToken($id);
             // createRefToken
             $ref = $this->tokenOps->createRefToken($id);
+            // update firebase id
+            $this->userOps->updateFirebaseTokenIfNew($id, $fb_token);
             // chekc cars
             // check pending
         }
