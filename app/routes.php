@@ -13,10 +13,13 @@ use Slim\Psr7\Factory\ResponseFactory;
 
 use App\TestStatic\Up;
 
+
+use Psr\Http\Message\UploadedFileInterface;
+
 return function (App $app) {
 
 
-    
+
 
     // TODO
     $app->post('/otp_request', \App\OtpRequest::class);
@@ -61,7 +64,7 @@ return function (App $app) {
         Response $response
     ) {
 
-        
+
 
         // HTTP response
         $otp_data = array("fcm" => "working");
@@ -80,25 +83,42 @@ return function (App $app) {
         // var_dump($request->getUploadedFiles()['test']);
         $uploadedFiles = $request->getUploadedFiles();
 
-        $info = -99;
+        // $directory = dirname(__DIR__, 1);
+        $directory = dirname(__DIR__).'/uploads';
 
-        if(empty($uploadedFiles['test'])){
+        $success_file = -99;
+
+        if (empty($uploadedFiles['test'])) {
             $file = "isepmty";
-        }else{
+        } else {
             $file = $uploadedFiles['test'];
-            
-            if($file->getError() === UPLOAD_ERR_OK) {
-                $info = 5;
-            }
 
+            if ($file->getError() === UPLOAD_ERR_OK) {
+                $success_file = moveUploadedFile($directory, $file);
+            }
         }
-        
+
+
+        // echo exec('whoami');
 
         // HTTP response
-        $otp_data = array("fcm" => $info);
-        $response->getBody()->write((string)json_encode($otp_data));
+        $otp_data = array("fcm" => $success_file);
+        $response->getBody()->write((string)json_encode($directory));
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus(201);
     });
+
+    function moveUploadedFile(string $directory, UploadedFileInterface $uploadedFile)
+    {
+        $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
+
+        // see http://php.net/manual/en/function.random-bytes.php
+        $basename = bin2hex(random_bytes(8));
+        $filename = sprintf('%s.%0.8s', $basename, $extension);
+
+        $uploadedFile->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
+
+        return $filename;
+    }
 };
