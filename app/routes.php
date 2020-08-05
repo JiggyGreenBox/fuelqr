@@ -16,6 +16,8 @@ use App\TestStatic\Up;
 return function (App $app) {
 
 
+    
+
     // TODO
     $app->post('/otp_request', \App\OtpRequest::class);
 
@@ -24,12 +26,14 @@ return function (App $app) {
     $app->post('/ref_verify', \App\RefVerifyController::class);
 
 
+
+
     // pump auth to be created and added here
     $app->get('/pump_scan', \App\PumpScanController::class);
 
     // add auth here
     $app->get('/cars_pending', \App\CarAndPendingController::class);
-    
+
 
     // group has AuthCheck attached to each request
     $app->group('', function (Group $group) {
@@ -45,4 +49,56 @@ return function (App $app) {
         });
     })->add(\App\AuthCheck::class);
 
+
+
+
+
+
+
+    // FCM test
+    $app->get('/fcm_test', function (
+        Request $request,
+        Response $response
+    ) {
+
+        
+
+        // HTTP response
+        $otp_data = array("fcm" => "working");
+        $response->getBody()->write((string)json_encode($otp_data));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(201);
+    });
+
+
+    $app->post('/file_test', function (
+        Request $request,
+        Response $response
+    ) {
+
+        // var_dump($request->getUploadedFiles()['test']);
+        $uploadedFiles = $request->getUploadedFiles();
+
+        $info = -99;
+
+        if(empty($uploadedFiles['test'])){
+            $file = "isepmty";
+        }else{
+            $file = $uploadedFiles['test'];
+            
+            if($file->getError() === UPLOAD_ERR_OK) {
+                $info = 5;
+            }
+
+        }
+        
+
+        // HTTP response
+        $otp_data = array("fcm" => $info);
+        $response->getBody()->write((string)json_encode($otp_data));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(201);
+    });
 };
