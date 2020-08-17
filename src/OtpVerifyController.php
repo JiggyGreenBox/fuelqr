@@ -39,7 +39,7 @@ final class OtpVerifyController
         $postData = (array)$request->getParsedBody();
 
         // check post vars
-        if (!array_key_exists("ph_no", $postData) || !array_key_exists("otp", $postData)|| !array_key_exists("fb_token", $postData)) {
+        if (!array_key_exists("ph_no", $postData) || !array_key_exists("otp", $postData) || !array_key_exists("fb_token", $postData)) {
             return $this->errorReturn($request, $response, "Access Denied");
         }
 

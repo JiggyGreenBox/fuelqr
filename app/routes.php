@@ -11,8 +11,7 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 use Slim\Psr7\Factory\ResponseFactory;
 
-use App\TestStatic\Up;
-
+use Slim\Psr7\Factory\StreamFactory;
 
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -33,6 +32,10 @@ return function (App $app) {
 
     // pump auth to be created and added here
     $app->get('/pump_scan', \App\PumpScanController::class);
+    $app->post('/pending_trans_completed', \App\CompletedTransactionController::class);
+    $app->get('/post_video_check', \App\PostVideoCheckController::class);
+
+    $app->post('/post_video', \App\PostVideoController::class);
 
     // add auth here
     $app->get('/cars_pending', \App\CarAndPendingController::class);
@@ -54,7 +57,43 @@ return function (App $app) {
 
 
 
+    $app->get('/view_video', function (Request $request, Response $response) {
 
+        set_time_limit(0);
+
+        // $clipid = $args['clipid'];
+        // $clip = "/uploads/lgurT6xW72.mp4";
+        //$directory = dirname(__DIR__) . '/uploads';
+        $file = dirname(__DIR__) . '/uploads/lgurT6xW72.mp4';
+        // $file = dirname(__DIR__) . '/uploads/2.mp4';
+        // $openFile = fopen($file, 'rb');
+        // $stream = new Slim\Http\Stream($openFile);
+
+        /*
+        $response = $response->withHeader('Content-type', 'video/mp4');
+
+
+        // return $response->withBody((new StreamFactory())->createStreamFromFile($file));
+        return $response->withBody((new StreamFactory())->createStreamFromFile($file));
+        // createStream
+        // createStreamFromResource
+        */
+
+
+        set_time_limit(0);
+
+        header('Content-Type: video/mp4');
+        header('Content-Length: ' . filesize($file));
+
+        $handle = fopen($file, "rb");
+        while (!feof($handle)) {
+            echo fread($handle, 8192);
+            ob_flush();
+            flush();
+        }
+        fclose($handle);
+        exit(0);
+    });
 
 
 
@@ -84,19 +123,19 @@ return function (App $app) {
         $uploadedFiles = $request->getUploadedFiles();
 
         // $directory = dirname(__DIR__, 1);
-        $directory = dirname(__DIR__).'/uploads';
+        $directory = dirname(__DIR__) . '/uploads';
 
         $success_file = -99;
 
-        if (empty($uploadedFiles['test'])) {
-            $file = "isepmty";
-        } else {
-            $file = $uploadedFiles['test'];
+        // if (empty($uploadedFiles['test'])) {
+        //     $file = "isepmty";
+        // } else {
+        //     $file = $uploadedFiles['test'];
 
-            if ($file->getError() === UPLOAD_ERR_OK) {
-                $success_file = moveUploadedFile($directory, $file);
-            }
-        }
+        //     if ($file->getError() === UPLOAD_ERR_OK) {
+        //         $success_file = moveUploadedFile($directory, $file);
+        //     }
+        // }
 
 
         // echo exec('whoami');
@@ -109,16 +148,16 @@ return function (App $app) {
             ->withStatus(201);
     });
 
-    function moveUploadedFile(string $directory, UploadedFileInterface $uploadedFile)
-    {
-        $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
+    // function moveUploadedFile(string $directory, UploadedFileInterface $uploadedFile)
+    // {
+    //     $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
 
-        // see http://php.net/manual/en/function.random-bytes.php
-        $basename = bin2hex(random_bytes(8));
-        $filename = sprintf('%s.%0.8s', $basename, $extension);
+    //     // see http://php.net/manual/en/function.random-bytes.php
+    //     $basename = bin2hex(random_bytes(8));
+    //     $filename = sprintf('%s.%0.8s', $basename, $extension);
 
-        $uploadedFile->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
+    //     $uploadedFile->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
 
-        return $filename;
-    }
+    //     return $filename;
+    // }
 };

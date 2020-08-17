@@ -63,7 +63,108 @@ final class TransactionOps
         return $ret_array;
     }
 
+    // from pump middleware server    
+    public function existsInCompletedTransactions($trans_qr, $trans_date)
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM completed_transactions WHERE date(date) = :trans_date and trans_qr = :trans_qr');
+        $stmt->execute([
+            'trans_qr' => $trans_qr,
+            'trans_date' => $trans_date
+        ]);
 
+        $row = $stmt->fetch();
+
+        // match found
+        if ($row) {
+            return true;
+        }
+        return false;
+    }
+
+    // from pump-op afterStopPhoto
+    public function movePendingToCompleted($qr, $liters, $rate, $shift, $attendant_id)
+    {
+
+        // ret array
+        $ret_array = array();
+
+        $this->pdo->beginTransaction();
+
+        try {
+            // fetch from pending
+            $stmt = $this->pdo->prepare('SELECT * FROM pending_transactions WHERE :qr IN(car_qr,trans_qr)');
+            $stmt->execute([
+                'qr'     => $qr
+            ]);
+            $row = $stmt->fetch();
+
+            // no match
+            if ($row) {
+
+                // insert begin
+                $stmt = $this->pdo->prepare('INSERT INTO completed_transactions (pump_id, cust_id, car_id, user_id, shift, fuel, amount, rate, liters, trans_qr, date, time_created, video) 
+                                        VALUES (:pump_id, :cust_id, :car_id, :user_id, :shift, :fuel, :amount, :rate, :liters, :trans_qr, :mdate, :time_created, :video)');
+                $stmt->execute([
+                    'pump_id' => 1,
+                    'cust_id' => $row['user_id'],
+                    'car_id' => $row['car_id'],
+                    'user_id' => $attendant_id,
+                    'shift' => $shift,
+                    'fuel' => $row['fuel_type'],
+                    'amount' => $row['amount'],
+                    'rate' => $rate,
+                    'liters' => $liters,
+                    'trans_qr' => $qr,
+                    'time_created' => $row['time_created'],
+                    'mdate' => date("Y-m-d H:i:s", $row['time_created']),
+                    'video' => 'N',
+                ]);
+
+                $this->pdo->lastInsertId();
+
+                // after insertion, delete from pending
+                $stmt = $this->pdo->prepare('DELETE FROM pending_transactions WHERE time_created = :time_created AND user_id = :user_id');
+                $stmt->execute([
+                    'time_created' => $row['time_created'],
+                    'user_id' => $row['user_id']
+                ]);
+
+                $this->pdo->commit();
+
+                $ret_array['success'] = true;
+            } else {
+                $ret_array['success'] = false;
+            }
+        } catch (\Exception $e) {
+            $this->pdo->rollback();
+            $ret_array['success'] = false;
+            throw $e;
+        }
+
+        return $ret_array;
+    }
+
+    // before video save, using id
+    // use trans_qr to fetch id
+    // public function getCompletedTransId($trans_qr, $trans_date)
+    // {
+
+    //     $ret_id = -1;
+
+    //     $stmt = $this->pdo->prepare('SELECT trans_id FROM completed_transactions WHERE date(date) = :trans_date and cust_qr = :trans_qr');
+    //     $stmt->execute([
+    //         'trans_qr' => $trans_qr,
+    //         'trans_date' => $trans_date
+    //     ]);
+    //     $row = $stmt->fetch();
+
+    //     // match found
+    //     if ($row) {
+    //         $ret_id = $row['trans_id'];
+    //     }
+
+    //     return $ret_id;
+    // }
 
     public function createPendingTransaction($id, $amount, $fuel_type, $car_id)
     {
@@ -136,7 +237,8 @@ final class TransactionOps
 
     private function isDuplicateTransQR($trans_qr)
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM pending_transactions WHERE trans_qr =  :trans_qr');
+        //$stmt = $this->pdo->prepare('SELECT 1 FROM pending_transactions WHERE trans_qr =  :trans_qr');
+        $stmt = $this->pdo->prepare('SELECT 1 FROM completed_transactions WHERE trans_qr =  :trans_qr');
         $stmt->execute([
             'trans_qr'     => $trans_qr
         ]);

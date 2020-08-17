@@ -49,7 +49,7 @@ final class RefVerifyController
 
         // if invalid return
         if ($id == "invalid") {
-            return $this->errorReturn($request, $response, "Access Denied");
+            return $this->errorReturn($request, $response, "Token Invalid");
         } else {
             $auth = $this->tokenOps->createAuthToken($id);
 
