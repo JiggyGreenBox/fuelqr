@@ -224,10 +224,13 @@ final class TransactionOps
         $length = 10;
         $trans_qr = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 1, $length);
 
-        // check if exists
+        // check if exists in previous transactions
         if ($this->isDuplicateTransQR($trans_qr)) {
-            // recursion
-            return $this->getNewTransactionQR();
+            // check if exists in car qr codes
+            if($this->isDuplicateCarQR($car_qr)){
+                // recursion
+                return $this->getNewTransactionQR();
+            }            
         }
         // return string
         else {
@@ -241,6 +244,21 @@ final class TransactionOps
         $stmt = $this->pdo->prepare('SELECT 1 FROM completed_transactions WHERE trans_qr =  :trans_qr');
         $stmt->execute([
             'trans_qr'     => $trans_qr
+        ]);
+        $row = $stmt->fetch();
+        // result found
+        if ($row) {
+            return true;
+        }
+        return false;
+    }
+
+    private function isDuplicateCarQR($car_qr)
+    {
+        //$stmt = $this->pdo->prepare('SELECT 1 FROM pending_transactions WHERE trans_qr =  :trans_qr');
+        $stmt = $this->pdo->prepare('SELECT 1 FROM codes WHERE qr_code =  :car_qr');
+        $stmt->execute([
+            'car_qr'     => $car_qr
         ]);
         $row = $stmt->fetch();
         // result found

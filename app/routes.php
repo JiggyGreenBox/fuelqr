@@ -27,13 +27,16 @@ return function (App $app) {
 
     $app->post('/ref_verify', \App\RefVerifyController::class);
 
-
+    
+    $app->post('/generate_codes', \App\GenerateCodesController::class);
 
 
     // pump auth to be created and added here
     $app->get('/pump_scan', \App\PumpScanController::class);
     $app->post('/pending_trans_completed', \App\CompletedTransactionController::class);
     $app->get('/post_video_check', \App\PostVideoCheckController::class);
+
+    $app->post('/post_new_car', \App\NewCarController::class);
 
     $app->post('/post_video', \App\PostVideoController::class);
 

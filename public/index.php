@@ -39,7 +39,7 @@ $app->addBodyParsingMiddleware();
 $middleware = require __DIR__.'/../app/middleware.php';
 $middleware($app);
 
-$app->setBasePath("/slim_test");
+$app->setBasePath("/fuelqr");
 
 $routes = require __DIR__.'/../app/routes.php';
 $routes($app);

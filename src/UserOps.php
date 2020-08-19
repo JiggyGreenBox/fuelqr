@@ -37,6 +37,55 @@ final class UserOps
         }
     }
 
+    // from add car
+    public function getIdByTransQR($trans_qr){
+        // $stmt = $this->pdo->prepare('SELECT cust_id FROM pending_transactions WHERE trans_qr = :trans_qr');
+        $stmt = $this->pdo->prepare('SELECT cust_id FROM completed_transactions WHERE trans_qr = :trans_qr');
+        $stmt->execute([
+            'trans_qr'     => $trans_qr,
+        ]);
+        $row = $stmt->fetch();
+
+        if ($row) {
+            return $row['cust_id'];
+        } else {
+            return -1;
+        }
+    }
+
+    // from add car
+    // could move to qr ops
+    public function getQRCodeStatus($car_qr) {
+
+        $ret_array = array();
+
+        $stmt = $this->pdo->prepare('SELECT * FROM codes WHERE qr_code = :car_qr');
+        $stmt->execute([
+            'car_qr'     => $car_qr,
+        ]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            // no qr found
+            // qr is invalid
+            $ret_array['exists'] = false;
+            return $ret_array;
+        } else {
+
+            // qr found
+            $ret_array['exists'] = true;
+
+            if($row['status'] == "active"){
+                $ret_array['assigned'] = true;
+            }
+            else{
+                $ret_array['assigned'] = false;
+            }
+
+            return $ret_array;
+        }
+    }
+
     public function createNewUser($ph_no)
     {
 
