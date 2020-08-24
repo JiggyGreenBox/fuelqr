@@ -2,32 +2,26 @@
 
 namespace App;
 
-use App\TestToken\CreateAuthToken;
+
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Container\ContainerInterface;
 use PDO;
 
-use App\UserOps;
-use Exception;
 
-final class CarAndPendingController
+final class TestPayments
 {
-
 
     public function __construct(
         PDO $pdo,
         ContainerInterface $c,
-        UserOps $userOps,
-        OtpVerify $otpVerify,
-        TokenOps $tokenOps
+        PaytmChecksum $paytmChecksum        
     ) {
         $this->pdo = $pdo;
-        $this->otp_timeout = $c->get('settings')['otp_timeout'];
-        $this->userOps = $userOps;
-        $this->otpOps = $otpVerify;
-        $this->tokenOps = $tokenOps;
+        $this->otp_timeout = $c->get('settings')['otp_timeout'];      
+        $this->paytmChecksum = $paytmChecksum;
     }
+
 
     public function __invoke(
         ServerRequestInterface $request,
@@ -35,25 +29,32 @@ final class CarAndPendingController
         array $args
     ): ResponseInterface {
 
-        // get id from auth-check
-        $id = $request->getAttribute('user_id');
+        /* initialize an array */
+        $paytmParams = array();
 
-        // get cars
-        $cars = $this->userOps->getCarsByID($id);
+        /* body parameters */
+        $paytmParams["body"] = array(
 
+            /* Find your MID in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys */
+            "mid" => "UaOfbG68292644480647",
+
+            /* Enter your order id which needs to be check status for */
+            "orderId" => "ORDERID_987",
+        );
+
+        $checksum = PaytmChecksum::generateSignature(json_encode($paytmParams["body"], JSON_UNESCAPED_SLASHES), "xGh5gDzSXq71HK7B");
+
+
+        // HTTP response        
         $ret_data = array();
-        $ret_data['cars'] =  $cars;
-        // $ret_data['cars'] =  "";
-        $ret_data['pending'] =  "";
+        $ret_data['paytm'] =  $checksum;
 
-
-        // HTTP response
-        $otp_data = array("otp" => "working");
         $response->getBody()->write((string)json_encode($ret_data));
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus(201);
     }
+
 
     private function errorReturn(
         ServerRequestInterface $request,

@@ -18,7 +18,7 @@ final class PumpScanController
     public function __construct(PDO $pdo, ContainerInterface $c, TransactionOps $transactionOps)
     {
         $this->pdo = $pdo;
-        $this->transactionOps = $transactionOps;
+        $this->transactionOps = $transactionOps;        
     }
 
     public function __invoke(
@@ -51,13 +51,13 @@ final class PumpScanController
         // check if payment is completed
         if ($payment_result['payment_status'] == "pending") {
             return $this->errorReturn($request, $response, "Payment Pending");
-        }
-
+        }        
 
         // payment successfull return amount, fuel_type
         $ret_data = array();
         $ret_data['amount'] =  $payment_result['amount'];
         $ret_data['fuel_type'] =  $payment_result['fuel_type'];
+        $ret_data['hasCarQR'] =  $payment_result['hasCarQR'];
 
 
         // HTTP response        

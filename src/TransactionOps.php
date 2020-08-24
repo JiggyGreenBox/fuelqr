@@ -56,6 +56,14 @@ final class TransactionOps
                 $ret_array['payment_status'] = "success";
                 $ret_array['amount'] = $row['amount'];
                 $ret_array['fuel_type'] = $row['fuel_type'];
+
+                if($qr == $row['car_qr']){
+                    $ret_array['hasCarQR'] = true;
+                }else{
+                    $ret_array['hasCarQR'] = false;
+                }
+
+
                 return $ret_array;
             }
         }
@@ -132,6 +140,7 @@ final class TransactionOps
                 $this->pdo->commit();
 
                 $ret_array['success'] = true;
+                $ret_array['user_id'] = $row['user_id']; // user for fcm
             } else {
                 $ret_array['success'] = false;
             }
@@ -172,12 +181,31 @@ final class TransactionOps
         // ret array
         $ret_array = array();
 
-        // find car_qr if exists
-        // TODO prevent 2 transactions on a single car
+        // find car_qr if exists        
         if ($car_id == "") {
             $car_id = NULL;
             $car_qr = NULL;
             $ret_array['hasCarQR'] = false;
+        }
+        //
+        else {
+            // prevent 2 transactions for a single car
+            if ($this->pendingTransationsExistForCarId($car_id)) {
+                $ret_array['success'] = false;
+                $ret_array['message'] = "Pending Transation already exists for Car";
+                return $ret_array;
+            }
+            // 
+            else {
+                $car_qr = $this->getCarQR($car_id, $id);
+                if ($car_id == "") {
+                    $ret_array['success'] = false;
+                    $ret_array['message'] = "Car ID error";
+                    return $ret_array;
+                }else{
+                    $ret_array['hasCarQR'] = true;
+                }
+            }
         }
         // $car_qr = "";
 
@@ -209,6 +237,7 @@ final class TransactionOps
 
             // throw $e;
             $ret_array['success'] = false;
+            $ret_array['message'] = "DB error";
             return $ret_array;
         }
 
@@ -227,10 +256,10 @@ final class TransactionOps
         // check if exists in previous transactions
         if ($this->isDuplicateTransQR($trans_qr)) {
             // check if exists in car qr codes
-            if($this->isDuplicateCarQR($car_qr)){
+            if ($this->isDuplicateCarQR($trans_qr)) {
                 // recursion
                 return $this->getNewTransactionQR();
-            }            
+            }
         }
         // return string
         else {
@@ -266,5 +295,37 @@ final class TransactionOps
             return true;
         }
         return false;
+    }
+
+    private function pendingTransationsExistForCarId($car_id)
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM pending_transactions WHERE car_id =  :car_id');
+        $stmt->execute([
+            'car_id'     => $car_id
+        ]);
+        $row = $stmt->fetch();
+        // result found
+        if ($row) {
+            return true;
+        }
+        return false;
+    }
+
+    private function getCarQR($car_id, $user_id)
+    {
+
+        $ret = "";
+
+        $stmt = $this->pdo->prepare('SELECT car_qr_code  FROM cars WHERE car_id = :car_id AND car_cust_id = :cust_id AND `status` = "active"');
+        $stmt->execute([
+            'car_id'     => $car_id,
+            'cust_id'     => $user_id
+        ]);
+        $row = $stmt->fetch();
+        // result found
+        if ($row) {
+            return $row['car_qr_code'];
+        }
+        return $ret;
     }
 }

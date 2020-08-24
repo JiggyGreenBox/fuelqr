@@ -23,14 +23,17 @@ final class NewTransactionController
         UserOps $userOps,
         OtpVerify $otpVerify,
         TokenOps $tokenOps,
-        TransactionOps $transactionOps
+        TransactionOps $transactionOps,
+        PaytmOps $paytmOps
     ) {
         $this->pdo = $pdo;
         $this->otp_timeout = $c->get('settings')['otp_timeout'];
+        $this->paytm_mid = $c->get('settings')['paytm_mid'];
         $this->userOps = $userOps;
         $this->otpOps = $otpVerify;
         $this->tokenOps = $tokenOps;
         $this->transactionOps = $transactionOps;
+        $this->paytmOps = $paytmOps;
     }
 
     public function __invoke(
@@ -63,7 +66,20 @@ final class NewTransactionController
         $ret = $this->transactionOps->createPendingTransaction($id, $amount, $fuel_type, $car_id);
 
         if (!$ret['success']) {
-            return $this->errorReturn($request, $response, "Transaction Error");
+            return $this->errorReturn($request, $response, $ret["message"]);
+        }
+
+        // create paytm initiate-transaction request
+        // send back txnToken, price, orderid, mid
+        $ret_paytm = $this->paytmOps->initiateTransationRequest($amount, $ret['trans_qr'], $id);
+
+        // TODO handle payment failure
+        $txnToken = "";
+
+        // parse json results
+        $json_paytm = json_decode($ret_paytm, true);
+        if($json_paytm['body']['resultInfo']['resultStatus'] == 'S'){
+            $txnToken = $json_paytm['body']['txnToken'];
         }
 
 
@@ -72,6 +88,8 @@ final class NewTransactionController
         $ret_data['pending_transaction'] =  "success";
         $ret_data['trans_qr'] = $ret['trans_qr'];
         $ret_data['hasCarQR'] = $ret['hasCarQR'];
+        $ret_data['txnToken'] = $txnToken;
+        $ret_data['mid'] = $this->paytm_mid;
 
         // HTTP response        
         $response->getBody()->write((string)json_encode($ret_data));

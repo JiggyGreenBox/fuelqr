@@ -27,7 +27,7 @@ return function (App $app) {
 
     $app->post('/ref_verify', \App\RefVerifyController::class);
 
-    
+
     $app->post('/generate_codes', \App\GenerateCodesController::class);
 
 
@@ -41,13 +41,15 @@ return function (App $app) {
     $app->post('/post_video', \App\PostVideoController::class);
 
     // add auth here
-    $app->get('/cars_pending', \App\CarAndPendingController::class);
+    //$app->get('/cars_pending', \App\CarAndPendingController::class);
 
 
     // group has AuthCheck attached to each request
     $app->group('', function (Group $group) {
 
         $group->post('/new_transaction', \App\NewTransactionController::class);
+
+        $group->get('/cars_pending', \App\CarAndPendingController::class);
 
         $group->get('/ad', function (Request $request, Response $response) {
 
@@ -67,8 +69,8 @@ return function (App $app) {
         // $clipid = $args['clipid'];
         // $clip = "/uploads/lgurT6xW72.mp4";
         //$directory = dirname(__DIR__) . '/uploads';
-        $file = dirname(__DIR__) . '/uploads/lgurT6xW72.mp4';
-        // $file = dirname(__DIR__) . '/uploads/2.mp4';
+        // $file = dirname(__DIR__) . '/uploads/lgurT6xW72.mp4';
+        $file = dirname(__DIR__) . '/uploads/1DyF5zWYnJ.mp4';
         // $openFile = fopen($file, 'rb');
         // $stream = new Slim\Http\Stream($openFile);
 
@@ -101,20 +103,7 @@ return function (App $app) {
 
 
     // FCM test
-    $app->get('/fcm_test', function (
-        Request $request,
-        Response $response
-    ) {
-
-
-
-        // HTTP response
-        $otp_data = array("fcm" => "working");
-        $response->getBody()->write((string)json_encode($otp_data));
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withStatus(201);
-    });
+    $app->get('/paytm_test', \App\TestPayments::class);
 
 
     $app->post('/file_test', function (
@@ -150,17 +139,4 @@ return function (App $app) {
             ->withHeader('Content-Type', 'application/json')
             ->withStatus(201);
     });
-
-    // function moveUploadedFile(string $directory, UploadedFileInterface $uploadedFile)
-    // {
-    //     $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
-
-    //     // see http://php.net/manual/en/function.random-bytes.php
-    //     $basename = bin2hex(random_bytes(8));
-    //     $filename = sprintf('%s.%0.8s', $basename, $extension);
-
-    //     $uploadedFile->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
-
-    //     return $filename;
-    // }
 };

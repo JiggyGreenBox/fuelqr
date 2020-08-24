@@ -57,10 +57,13 @@ final class RefVerifyController
         }
 
 
+        // get cars 
+        $cars = $this->userOps->getCarsByID($id);
+
         // HTTP response        
         $ret_data = array();
         $ret_data['auth'] = $auth;
-        $ret_data['cars'] =  "";
+        $ret_data['cars'] =  $cars;
         $ret_data['pending'] =  "";
 
         $response->getBody()->write((string)json_encode($ret_data));

@@ -15,10 +15,12 @@ final class CompletedTransactionController
     private $pdo;
     private $otp_timeout;
 
-    public function __construct(PDO $pdo, ContainerInterface $c, TransactionOps $transactionOps)
+    public function __construct(PDO $pdo, ContainerInterface $c, TransactionOps $transactionOps, UserOps $userOps, FcmOps $fcmOps)
     {
         $this->pdo = $pdo;
         $this->transactionOps = $transactionOps;
+        $this->userOps = $userOps;
+        $this->fcmOps = $fcmOps;
     }
 
     public function __invoke(
@@ -47,7 +49,9 @@ final class CompletedTransactionController
         $rate           = $postData['rate'];
         //$shift          = $postData['shift'];
         $attendant_id   = $postData['attendant_id'];
-        $shift 			= ($postData['shift'] == "a") ? 1 : 2;
+        $shift             = ($postData['shift'] == "a") ? 1 : 2;
+
+        $fcm_message = "Transaction successful";
 
         // get details from pending transactions
         $payment_result = $this->transactionOps->getPendingTransDetails($qr);
@@ -70,18 +74,22 @@ final class CompletedTransactionController
             return $this->errorReturn($request, $response, "Transaction Error");
         }
 
-        
+        // send fcm message to user
+        $fcm_id = $this->userOps->getFcmID($moveStatus['user_id']);
+        if ($fcm_id != -1) {
+            $this->fcmOps->sendFcmMessage($fcm_id, $fcm_message);
+        }
 
         // move successfull return success to android
         $ret_data = array();
         $ret_data['success'] = true;
+        $ret_data['fcm_id'] = $fcm_id;
 
         // HTTP response        
         $response->getBody()->write((string)json_encode($ret_data));
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus(201);
-
     }
 
 

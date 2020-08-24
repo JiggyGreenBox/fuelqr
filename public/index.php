@@ -40,6 +40,7 @@ $middleware = require __DIR__.'/../app/middleware.php';
 $middleware($app);
 
 $app->setBasePath("/fuelqr");
+// $app->setBasePath("/slim_test");
 
 $routes = require __DIR__.'/../app/routes.php';
 $routes($app);
