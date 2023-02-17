@@ -24,7 +24,7 @@
     "require": {
         "php": "^7.2",
         "ext-json": "*",
-        "firebase/php-jwt": "^5.2",
+        "firebase/php-jwt": "^6.0",
         "monolog/monolog": "^2.0",
         "php-di/php-di": "^6.1",
         "selective/basepath": "^1.0",
